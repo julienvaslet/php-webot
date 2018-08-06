@@ -79,7 +79,7 @@ class HttpClient
                     $remainingRedirections--;
                 }
                 else
-                    throw new \Exception( "Asking for a redirection, but no location have been provided." );
+                    throw new \Exception( "Asking for a redirection, but no location has been provided." );
             }
         }
         while( is_null( $response ) && $remainingRedirections > 0 );
