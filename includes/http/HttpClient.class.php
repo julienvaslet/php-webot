@@ -64,7 +64,28 @@ class HttpClient
             $request->setHeader( "Cookie", implode( "; ", $cookies ) );
         }
         
-        $response = $request->process();
+        $remainingRedirections = 10;
+
+        do
+        {
+            $response = $request->process();
+
+            if( in_array( $response->getHttpCode(), array( 301, 302 ) ) )
+            {
+                if( array_key_exists( "Location", $response->getHeaders() ) )
+                {
+                    $request->setUrl( $response->getHeaders()["Location"] );
+                    $response = null;
+                    $remainingRedirections--;
+                }
+                else
+                    throw new \Exception( "Asking for a redirection, but no location have been provided." );
+            }
+        }
+        while( is_null( $response ) && $remainingRedirections > 0 );
+
+        if( $remainingRedirections == 0 )
+            throw new \Exception( "Maximum of ten (10) redirections exceeded." );
 
         if( $response->getHttpCode() == 200 )
         {

@@ -31,6 +31,11 @@ class HttpResponse
     {
         return $this->headers;
     }
+
+    public function getContent()
+    {
+        return $this->content;
+    }
 }
 
 ?>

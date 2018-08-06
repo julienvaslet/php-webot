@@ -15,7 +15,7 @@ class HttpRequest
     public function __construct( $method, $url )
     {
         $this->method = $method;
-        $this->url = HttpUrl::parse( $url );
+        $this->setUrl( $url );
         $this->content = null;
         $this->headers = array(
             "Accept-Encoding" => "deflate",
@@ -27,6 +27,11 @@ class HttpRequest
     public function getMethod()
     {
         return strtoupper( $this->method );
+    }
+
+    public function setUrl( $url )
+    {
+        $this->url = HttpUrl::parse( $url );
     }
 
     public function &getUrl()

@@ -44,8 +44,6 @@ class HttpCookie
     {
         $cookie = null;
 
-        var_dump( $cookieString );
-
         $name = "";
         $value = "";
 
