@@ -28,6 +28,11 @@ class HtmlComment extends HtmlElement
     {
         return "<!-- {$this->comment} -->";
     }
+    
+    public function match( array $requirements )
+    {
+        return false;
+    }
 }
 
 ?>

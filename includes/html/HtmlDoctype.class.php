@@ -28,6 +28,11 @@ class HtmlDoctype extends HtmlElement
     {
         return "<!DOCTYPE {$this->doctype}>";
     }
+    
+    public function match( array $requirements )
+    {
+        return false;
+    }
 }
 
 ?>

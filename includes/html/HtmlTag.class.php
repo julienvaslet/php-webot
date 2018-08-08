@@ -26,6 +26,21 @@ class HtmlTag extends HtmlElement
         $this->name = strtolower( $name );
     }
 
+    public function getClasses()
+    {
+        $classes = array();
+
+        if( $this->hasAttribute( "class" ) )
+            $classes = preg_split( '/\s+/', $this->getAttribute( "class" ) );
+
+        return $classes;
+    }
+
+    public function hasClass( string $class )
+    {
+        return in_array( $class, $this->getClasses() );
+    }
+
     public function hasAttribute( string $attribute )
     {
         return array_key_exists( $attribute, $this->attributes );
@@ -89,6 +104,147 @@ class HtmlTag extends HtmlElement
             $content .= "</{$this->name}>";
 
         return $content;
+    }
+    
+    public function match( array $requirements )
+    {
+        $matches = true;
+
+        if( array_key_exists( "name", $requirements ) && strlen( $requirements["name"] ) > 0 )
+        {
+            if( $this->name != $requirements["name"] )
+                $matches = false;
+        }
+
+        if( $matches && array_key_exists( "classes", $requirements ) && count( $requirements["classes"] ) )
+        {
+            foreach( $requirements["classes"] as $class )
+            {
+                if( !$this->hasClass( $class ) )
+                {
+                    $matches = false;
+                    break;
+                }
+            }
+        }
+
+        if( $matches && array_key_exists( "attributes", $requirements ) && count( $requirements["attributes"] ) )
+        {
+            foreach( $requirements["attributes"] as $attributeRequirement )
+            {
+                $name = $attributeRequirement[0];
+                $operator = $attributeRequirement[1];
+                $value = $attributeRequirement[2];
+
+                if( $this->hasAttribute( $name ) )
+                {
+                    // Strictly equality
+                    if( $operator == "=" )
+                    {
+                        if( $this->getAttribute( $name ) != $value )
+                        {
+                            $matches = false;
+                            break;
+                        }
+                    }
+
+                    // Contains the word
+                    else if( $operator == "~=" )
+                    {
+                        if( !preg_match( '/\b'.$value.'\b/', $this->getAttribute( $name ) ) )
+                        {
+                            $matches = false;
+                            break;
+                        }
+                    }
+
+                    // Contains the characters
+                    else if( $operator == "*=" )
+                    {
+                        if( !preg_match( '/'.$value.'/', $this->getAttribute( $name ) ) )
+                        {
+                            $matches = false;
+                            break;
+                        }
+                    }
+
+                    // Begins with
+                    else if( $operator == "^=" )
+                    {
+                        if( !preg_match( '/^'.$value.'/', $this->getAttribute( $name ) ) )
+                        {
+                            $matches = false;
+                            break;
+                        }
+                    }
+
+                    // Ends with
+                    else if( $operator == "$=" )
+                    {
+                        if( !preg_match( '/'.$value.'$/', $this->getAttribute( $name ) ) )
+                        {
+                            $matches = false;
+                            break;
+                        }
+                    }
+
+                    // Equality of the first hyphen-separated list element
+                    else if( $operator == "|=" )
+                    {
+                        if( !preg_match( '/^'.$value.'-/', $this->getAttribute( $name ) ) )
+                        {
+                            $matches = false;
+                            break;
+                        }
+                    }
+                    else if( !is_null( $operator ) )
+                        throw new \Exception( "Unknown attribute operator." );
+                }
+                else
+                {
+                    $matches = false;
+                    break;
+                }
+            }
+        }
+
+        if( $matches && array_key_exists( "pseudoClasses", $requirements ) && count( $requirements["pseudoClasses"] ) )
+        {
+            // To be implemented.
+        }
+
+        if( $matches && array_key_exists( "parent", $requirements ) && is_array( $requirements["parent"] ) )
+        {
+            if( is_null( $this->parent ) || !$this->parent->match( $requirements["parent"] ) )
+                $matches = false;
+        }
+        
+        if( $matches && array_key_exists( "precededBy", $requirements ) && is_array( $requirements["precededBy"] ) )
+        {
+            $matches = false;
+
+            foreach( $this->getSiblings() as $sibling )
+            {
+                if( $sibling === $this )
+                    break;
+                
+                if( $sibling->match( $requirements["precededBy"] ) )
+                {
+                    $matches = true;
+                    break;
+                }
+            }
+        }
+
+        if( $matches && array_key_exists( "immediatlyAfter", $requirements ) && is_array( $requirements["immediatlyAfter"] ) )
+        {
+            $previousSibling = $this->getPreviousSibling();
+
+            if( is_null( $previousSibling ) || !$previousSibling->match( $requirements["immediatlyAfter"] ) )
+                $matches = false;
+        }
+
+        return $matches;
     }
 }
 

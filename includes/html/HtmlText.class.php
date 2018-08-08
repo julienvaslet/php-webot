@@ -28,6 +28,11 @@ class HtmlText extends HtmlElement
     {
         return $this->text;
     }
+    
+    public function match( array $requirements )
+    {
+        return false;
+    }
 }
 
 ?>
