@@ -21,10 +21,10 @@ class HtmlParser
         $root = new HtmlTag( "root" );
         $tags = array();
 
-        $pattern = '%(?:<!--.*?-->|<![^>]+>|</?[^>\s]+(?:\s+[^=\s]+(?:\s*=\s*"(?:[^"]|\\\\")*")?)*/?>)%s';
+        $pattern = '%(?:<!--.*?-->|<![^>]+>|<\s*/?\s*[^>\s]+(?:\s+[^=>\s]+(?:\s*=\s*"(?:[^"]|\\\\")*")?)*\s*/?\s*>)%s';
         $doctypePattern = '%<!DOCTYPE\s+([^>]+)>%s';
         $commentPattern = '%<!--\s*(.*?)\s*-->%s';
-        $tagPattern = '%<(/?)([^>\s]+)((?:\s+[^=\s]+(?:\s*=\s*"(?:[^"]|\\\\")*")?)*)(/?)>%s';
+        $tagPattern = '%<\s*(/?)\s*([^>\s]+)((?:\s+[^=\s]+(?:\s*=\s*"(?:[^"]|\\\\")*")?)*)\s*(/?)\s*>%s';
         $attributePattern = '%([^=\s]+)(?:\s*=\s*"((?:[^"]|\\\\")*)")?%s';
         
         preg_match_all( $pattern, $this->html, $matches, PREG_OFFSET_CAPTURE );
@@ -103,10 +103,11 @@ class HtmlParser
                         }
                     }
 
-                    /*if( $tagIndex < 0 )
-                        throw new \Exception( "Opening tag not found." );*/
-                    
-                    array_push( $tags, array( "close", $tagIndex ) );
+                    if( $tagIndex >= 0 )
+                        array_push( $tags, array( "close", $tagIndex ) );
+
+                    /*else
+                        echo "Ignoring closing tag {$name} because opening tag was not found.\n";*/
                 }
             }
         }

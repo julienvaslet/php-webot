@@ -140,7 +140,7 @@ class HttpRequest
             {
                 $contentLength = 0;
 
-                if( array_key_exists( "Content-Length", $headers ) && preg_match( "^[0-9]+$", $headers["Content-Length"] ) )
+                if( array_key_exists( "Content-Length", $headers ) && preg_match( "%^[0-9]+$%", $headers["Content-Length"] ) )
                     $contentLength = intval( $headers["Content-Length"] );
                 
                 if( $contentLength > 0 )
@@ -158,7 +158,7 @@ class HttpRequest
         else
             throw new \Exception( "Unable to open socket: ({$errno}) {$errstr}" );
         
-        return new HttpResponse( $httpCode, $httpMessage, $content, $headers );
+        return new HttpResponse( $this->url, $httpCode, $httpMessage, $content, $headers );
     }
 }
 

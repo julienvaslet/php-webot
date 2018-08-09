@@ -119,16 +119,25 @@ class HttpUrl
         return "{$this->getProtocol()}://{$this->getServer()}:{$this->getPort()}{$this->getRequestLocation()}";
     }
 
-    public static function parse( $url )
+    public static function parse( $url, HttpUrl $relative = null )
     {
         $parsedUrl = null;
+
+        if( !is_null( $relative ) && !preg_match( '%^[^:]+://%m', $url ) )
+        {
+            if( preg_match( '%^/%', $url ) )
+                $url = "{$relative->getProtocol()}://{$relative->getServer()}:{$relative->getPort()}{$url}";
+
+            else
+                $url = "{$relative->getProtocol()}://{$relative->getServer()}:{$relative->getPort()}".dirname( $relative->getLocation() )."/{$url}";
+        }
 
         if( $url instanceof HttpUrl )
         {
             $parsedUrl = $url;
         }
         else
-            {
+        {
             $result = preg_match( "%^(?:([^:]+)://)([^/\?\#:]+)(?::([0-9]+))?((?:/[^\?\#]*)?)(?:\?([^#]*))?(?:#(.*))?$%iu", $url, $matches );
 
             if( $result !== false )
