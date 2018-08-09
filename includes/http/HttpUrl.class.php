@@ -142,9 +142,10 @@ class HttpUrl
 
             if( $result !== false )
             {
+                $anchor = "";
                 $query = array();
 
-                if( strlen( $matches[5] ) )
+                if( count( $matches ) > 5 && strlen( $matches[5] ) )
                 {
                     $elements = explode( "&", $matches[5] );
 
@@ -165,9 +166,12 @@ class HttpUrl
 
                 if( strlen( $matches[3] ) )
                     $port = intval( $matches[3] );
+                
+                if( count( $matches ) > 6 && strlen( $matches[6] ) )
+                    $anchor = $matches[6];
 
                 //new HttpUrl( $server, $location, $protocol, $port, array $query, $anchor )
-                $parsedUrl = new HttpUrl( $matches[2], $matches[4], $matches[1], $port, $query, $matches[6] );
+                $parsedUrl = new HttpUrl( $matches[2], $matches[4], $matches[1], $port, $query, $anchor );
             }
             else
             {

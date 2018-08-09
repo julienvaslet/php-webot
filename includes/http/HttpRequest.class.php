@@ -80,8 +80,7 @@ class HttpRequest
         $hostname = $this->url->getServer();
 
         if( $this->url->isSecure() )
-            $hostname = "tls://{$hostname}";
-            //$hostname = "ssl://{$hostname}";
+            $hostname = "ssl://{$hostname}";
 
         $socket = fsockopen( $hostname, $this->url->getPort(), $errno, $errstr );
 
@@ -101,12 +100,13 @@ class HttpRequest
             if( count( $responseHeaders ) )
             {
                 $statusLine = array_shift( $responseHeaders );
-                $result = preg_match( "%^HTTP/[^\s]+ ([0-9]+) (.*)$%", $statusLine, $matches );
+                $result = preg_match( "%^HTTP/([^\s]+) ([0-9]+) (.*)$%", $statusLine, $matches );
 
                 if( $result )
                 {
-                    $httpCode = intval( $matches[1] );
-                    $httpMessage = $matches[2];
+                    $httpVersion = $matches[1];
+                    $httpCode = intval( $matches[2] );
+                    $httpMessage = $matches[3];
 
                     foreach( $responseHeaders as $header )
                     {
@@ -144,7 +144,20 @@ class HttpRequest
                     $contentLength = intval( $headers["Content-Length"] );
                 
                 if( $contentLength > 0 )
-                    $content = fread( $socket, $contentLength );
+                {
+                    $content = "";
+                    $bufferLength = 1024;
+                    $readLength = 0;
+
+                    while( $readLength < $contentLength )
+                    {
+                        if( $contentLength - $readLength < $bufferLength )
+                            $bufferLength = $contentLength - $readLength;
+
+                        $content .= fread( $socket, $bufferLength );
+                        $readLength += $bufferLength;
+                    }
+                }
 
                 else
                 {
@@ -158,7 +171,7 @@ class HttpRequest
         else
             throw new \Exception( "Unable to open socket: ({$errno}) {$errstr}" );
         
-        return new HttpResponse( $this->url, $httpCode, $httpMessage, $content, $headers );
+        return new HttpResponse( $this->url, $httpVersion, $httpCode, $httpMessage, $content, $headers );
     }
 }
 

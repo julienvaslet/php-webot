@@ -11,12 +11,24 @@ class HttpClient
     protected $historyStack;
     protected $history;
     protected $cookies;
+    protected $debug;
     
     public function __construct()
     {
         $this->historyStack = array();
         $this->history = array();
         $this->cookies = array();
+        $this->debug = false;
+    }
+
+    public function activateDebug()
+    {
+        $this->debug = true;
+    }
+
+    public function deactivateDebug()
+    {
+        $this->debug = false;
     }
 
     public function pushHistory()
@@ -68,13 +80,34 @@ class HttpClient
 
         do
         {
+            if( $this->debug )
+            {
+                echo "------------------------------------\n";
+                echo date( "Y-m-d H:i:s" )."\n";
+                echo "------------------------------------\n";
+                echo $request->toString();
+                echo "------------------------------------\n";
+            }
+
             $response = $request->process();
+
+            if( $this->debug )
+            {
+                echo "------------------------------------\n";
+                echo date( "Y-m-d H:i:s" )."\n";
+                echo "------------------------------------\n";
+                echo $response->toString();
+                echo "------------------------------------\n";
+                echo "Read content length: ".strlen( $response->getContent() )."\n";
+                echo "------------------------------------\n";
+            }
 
             if( in_array( $response->getHttpCode(), array( 301, 302 ) ) )
             {
                 if( array_key_exists( "Location", $response->getHeaders() ) )
                 {
                     $request->setUrl( $response->getHeaders()["Location"] );
+                    $request->setHeader( "Referer", $response->getUrl()->toString() );
                     $response = null;
                     $remainingRedirections--;
                 }

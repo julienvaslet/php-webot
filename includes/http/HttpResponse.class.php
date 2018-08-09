@@ -5,14 +5,16 @@ namespace http;
 class HttpResponse
 {
     protected $url;
+    protected $httpVersion;
     protected $httpCode;
     protected $httpMessage;
     protected $headers;
     protected $content;
     
-    public function __construct( $url, $httpCode, $httpMessage, $content, array $headers = array() )
+    public function __construct( $url, $httpVersion, $httpCode, $httpMessage, $content, array $headers = array() )
     {
         $this->url = $url;
+        $this->httpVersion = $httpVersion;
         $this->httpCode = $httpCode;
         $this->httpMessage = $httpMessage;
         $this->content = $content;
@@ -22,6 +24,11 @@ class HttpResponse
     public function getUrl()
     {
         return $this->url;
+    }
+
+    public function getHttpVersion()
+    {
+        return $this->httpVersion;
     }
     
     public function getHttpCode()
@@ -42,6 +49,24 @@ class HttpResponse
     public function getContent()
     {
         return $this->content;
+    }
+
+    public function toString()
+    {
+        $content = "HTTP/{$this->httpVersion} {$this->httpCode} {$this->httpMessage}\r\n";
+
+        foreach( $this->headers as $header => $value )
+        {
+            if( is_array( $value ) )
+            {
+                foreach( $value as $v )
+                    $content .= "{$header}: {$v}\r\n";
+            }
+            else
+                $content .= "{$header}: {$value}\r\n";
+        }
+
+        return $content;
     }
 }
 
