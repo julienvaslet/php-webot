@@ -62,7 +62,7 @@ class HtmlParser
             }
             else if( preg_match( $tagPattern, $capture[0], $tagMatch ) )
             {
-                $selfClosed = strlen( $tagMatch[4] ) > 0;
+                //$selfClosed = strlen( $tagMatch[4] ) > 0;
                 $close = strlen( $tagMatch[1] ) > 0;
                 $name = $tagMatch[2];
 
@@ -87,10 +87,24 @@ class HtmlParser
                 }
                 else
                 {
-                    $tagIndex = count( $tags ) - 1;
+                    $stackedTags = 0;
 
-                    while( $tagIndex >= 0 && ($tags[$tagIndex][0] == "close" || ! $tags[$tagIndex][1] instanceof HtmlTag || $tags[$tagIndex][1]->getName() != $name) )
-                        $tagIndex--;
+                    for( $tagIndex = count( $tags ) - 1 ; $tagIndex >= 0 ; --$tagIndex )
+                    {
+                        if( $tags[$tagIndex][0] == "close" && $tags[$tags[$tagIndex][1]][1]->getName() == $name )
+                            ++$stackedTags;
+
+                        if( $tags[$tagIndex][0] == "open" && $tags[$tagIndex][1] instanceof HtmlTag && $tags[$tagIndex][1]->getName() == $name )
+                        {
+                            if( $stackedTags == 0 )
+                                break;
+                            else
+                                --$stackedTags;
+                        }
+                    }
+
+                    /*if( $tagIndex < 0 )
+                        throw new \Exception( "Opening tag not found." );*/
                     
                     array_push( $tags, array( "close", $tagIndex ) );
                 }
@@ -107,22 +121,19 @@ class HtmlParser
             array_push( $tags, array( "open", $textNode ) );
         }
 
-
         // Closing tags
         for( $i = count( $tags ) - 1 ; $i >= 0 ; --$i )
         {
             if( $tags[$i][0] == "close" )
             {
-                $matchingTag = $tags[$tags[$i][1]][1];
-                $j = $i - 1;
+                $openTagIndex = $tags[$i][1];
+                $matchingTag = $tags[$openTagIndex][1];
 
                 // Append tags while it is not the matching open.
-                while( $j > $tags[$i][1] )
+                for( $j = $i - 1 ; $j > $tags[$i][1] ; --$j )
                 {
                     if( $tags[$j][0] == "open" )
                         $matchingTag->prepend( $tags[$j][1] );
-                    
-                    $j--;
                 }
             }
         }

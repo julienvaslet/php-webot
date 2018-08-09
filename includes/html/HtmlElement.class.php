@@ -48,9 +48,39 @@ abstract class HtmlElement
         return $this;
     }
 
+    public function getLength()
+    {
+        return count( $this->children );
+    }
+
+    public function hasChildren()
+    {
+        return count( $this->children ) > 0;
+    }
+
+    public function getChildren()
+    {
+        return $this->children;
+    }
+
+    public function hasParent()
+    {
+        return !is_null( $this->parent );
+    }
+
     public function parent()
     {
         return $this->parent;
+    }
+
+    public function hasSiblings()
+    {
+        $has = false;
+
+        if( !is_null( $this->parent ) )
+            $has = ($this->parent->getLength() > 1);
+
+        return $has;
     }
 
     public function getSiblings()
@@ -64,6 +94,12 @@ abstract class HtmlElement
         }
 
         return $siblings;
+    }
+
+    public function hasNextSibling()
+    {
+        $siblings = $this->getSiblings();
+        return count( $siblings ) > 0 && $siblings[count( $siblings ) - 1] !== $this;
     }
 
     public function getNextSibling()
@@ -85,6 +121,12 @@ abstract class HtmlElement
         }
 
         return $sibling;
+    }
+
+    public function hasPreviousSibling()
+    {
+        $siblings = $this->getSiblings();
+        return count( $siblings ) > 0 && $siblings[0] !== $this;
     }
 
     public function getPreviousSibling()
