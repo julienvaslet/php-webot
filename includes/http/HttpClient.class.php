@@ -51,6 +51,19 @@ class HttpClient
         }
     }
 
+    protected function setCookies( $request )
+    {
+        if( count( $this->cookies ) > 0 )
+        {
+            $cookies = array();
+
+            foreach( $this->cookies as $cookie )
+                array_push( $cookies, $cookie->toString() );
+            
+            $request->setHeader( "Cookie", implode( "; ", $cookies ) );
+        }
+    }
+
     protected function processRequest( $request )
     {
         if( count( $this->history ) > 0 )
@@ -66,15 +79,8 @@ class HttpClient
             $request->setHeader( "Referer", $lastUrl );
         }
 
-        if( count( $this->cookies ) > 0 )
-        {
-            $cookies = array();
-
-            foreach( $this->cookies as $cookie )
-                array_push( $cookies, $cookie->toString() );
-            
-            $request->setHeader( "Cookie", implode( "; ", $cookies ) );
-        }
+        // Push cookies in the request
+        $this->setCookies( $request );
         
         $remainingRedirections = 10;
 
@@ -122,8 +128,13 @@ class HttpClient
                 {
                     $request->setMethod( "GET" );
                     $request->resetContent();
-                    $request->setUrl( $response->getHeaders()["Location"] );
+
+                    $locationUrl = HttpUrl::parse( $response->getHeaders()["Location"], $response->getUrl() );
+                    $request->setUrl( $locationUrl->toString() );
+                    
                     $request->setHeader( "Referer", $response->getUrl()->toString() );
+                    $this->setCookies( $request );
+
                     $response = null;
                     $remainingRedirections--;
                 }

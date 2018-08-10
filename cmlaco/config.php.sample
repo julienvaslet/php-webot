@@ -1,0 +1,17 @@
+<?php
+
+$configuration = array(
+    "username" => "user",
+    "password" => "pass",
+    "accountExclusion" => null, // Regular expression format: "/dummy/" will exclude account which contains "dummy"
+    "import" => function( $account, $content )
+    {
+        echo "Account: ".$account."\n";
+        echo "Content (".strlen( $content )." bytes): \n".$content."\n";
+
+        // Returns true on success.
+        return true;
+    }
+);
+
+?>

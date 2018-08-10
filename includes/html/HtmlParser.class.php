@@ -77,7 +77,7 @@ class HtmlParser
                     
                     for( $i = 0 ; $i < count( $attributeMatch[0] ) ; $i++ )
                     {
-                        $value = stripslashes( $attributeMatch[2][$i] );
+                        $value = htmlspecialchars_decode( stripslashes( $attributeMatch[2][$i] ) );
 
                         if( strlen( $value ) == 0 )
                             $value = "true";
@@ -108,7 +108,7 @@ class HtmlParser
                         }
 
                         // Ignoring not found closing tag and set the next tag to handle
-                        // to the closing one. Content will automatically be added.
+                        // to the closing one. Content will automatically be added (warn: trimed).
                         if( $jMatch < count( $matches[0] ) )
                             $iMatch = $jMatch - 1;
                     }

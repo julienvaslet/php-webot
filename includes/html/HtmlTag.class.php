@@ -72,7 +72,7 @@ class HtmlTag extends HtmlElement
         $attributes = array();
 
         foreach( $this->attributes as $name => $value )
-            array_push( $attributes, "{$name}=\"".addslashes( $value )."\"" );
+            array_push( $attributes, "{$name}=\"".addslashes( htmlspecialchars( $value ) )."\"" );
 
         $content = "<{$this->name}";
 
