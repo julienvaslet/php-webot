@@ -24,15 +24,19 @@ class HtmlParser
         $pattern = '%(?:<!--.*?-->|<![^>]+>|<\s*/?\s*[^>\s]+(?:\s+[^=>\s]+(?:\s*=\s*"(?:[^"]|\\\\")*")?)*\s*/?\s*>)%s';
         $doctypePattern = '%<!DOCTYPE\s+([^>]+)>%s';
         $commentPattern = '%<!--\s*(.*?)\s*-->%s';
-        $tagPattern = '%<\s*(/?)\s*([^>\s]+)((?:\s+[^=\s]+(?:\s*=\s*"(?:[^"]|\\\\")*")?)*)\s*(/?)\s*>%s';
+        $tagPattern = '%<\s*(/?)\s*([^>\s]+)((?:\s+[^=\s/]+(?:\s*=\s*"(?:[^"]|\\\\")*")?)*)\s*(/?)\s*>%s';
         $attributePattern = '%([^=\s]+)(?:\s*=\s*"((?:[^"]|\\\\")*)")?%s';
+        $rawContentTags = array( "script", "pre", "code" );
         
         preg_match_all( $pattern, $this->html, $matches, PREG_OFFSET_CAPTURE );
 
         $lastOffset = 0;
-        
-        foreach( $matches[0] as $capture )
+        $iMatch = 0;
+
+        for( $iMatch = 0 ; $iMatch < count( $matches[0] ) ; ++$iMatch )
         {
+            $capture = $matches[0][$iMatch];
+
             // Handle text content
             $text = trim( substr( $this->html, $lastOffset, $capture[1] - $lastOffset ) );
             
@@ -62,9 +66,9 @@ class HtmlParser
             }
             else if( preg_match( $tagPattern, $capture[0], $tagMatch ) )
             {
-                //$selfClosed = strlen( $tagMatch[4] ) > 0;
+                $selfClosed = strlen( $tagMatch[4] ) > 0;
                 $close = strlen( $tagMatch[1] ) > 0;
-                $name = $tagMatch[2];
+                $name = strtolower( $tagMatch[2] );
 
                 if( !$close )
                 {
@@ -78,12 +82,36 @@ class HtmlParser
                         if( strlen( $value ) == 0 )
                             $value = "true";
 
-                        $tag->setAttribute( $attributeMatch[1][$i], $value );
+                        $tag->setAttribute( strtolower( $attributeMatch[1][$i] ), $value );
                     }
 
                     $root->append( $tag );
-
                     array_push( $tags, array( "open", $tag ) );
+
+                    // Raw content tags, jump to closing tag
+                    if( in_array( $tag->getName(), $rawContentTags ) && !$selfClosed )
+                    {
+                        $jMatch = $iMatch + 1;
+
+                        for( ; $jMatch < count( $matches[0] ) ; ++$jMatch )
+                        {
+                            $subcapture = $matches[0][$jMatch];
+
+                            if( preg_match( $tagPattern, $subcapture[0], $subtagMatch ) )
+                            {
+                                $subName = strtolower( $subtagMatch[2] );
+                                $subClose = strlen( $subtagMatch[1] ) > 0;
+
+                                if( $subName == $tag->getName() && $subClose )
+                                    break;
+                            }
+                        }
+
+                        // Ignoring not found closing tag and set the next tag to handle
+                        // to the closing one. Content will automatically be added.
+                        if( $jMatch < count( $matches[0] ) )
+                            $iMatch = $jMatch - 1;
+                    }
                 }
                 else
                 {
