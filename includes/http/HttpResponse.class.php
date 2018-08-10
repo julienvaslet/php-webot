@@ -40,6 +40,21 @@ class HttpResponse
     {
         return $this->httpResponse;
     }
+
+    public function hasHeader( $header )
+    {
+        return array_key_exists( $header, $this->headers );
+    }
+
+    public function getHeader( $header )
+    {
+        $value = null;
+
+        if( $this->hasHeader( $header ) )
+            $value = $this->headers[$header];
+
+        return $value;
+    }
     
     public function getHeaders()
     {

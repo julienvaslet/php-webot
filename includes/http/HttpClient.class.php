@@ -102,10 +102,26 @@ class HttpClient
                 echo "------------------------------------\n";
             }
 
+            if( $response->hasHeader( "Set-Cookie" ) )
+            {
+                $setCookies = $response->getHeader( "Set-Cookie" );
+
+                if( !is_array( $setCookies ) )
+                    $setCookies = array( $setCookies );
+                
+                foreach( $setCookies as $setCookie )
+                {
+                    $cookie = HttpCookie::parse( $setCookie );
+                    $this->cookies[$cookie->getName()] = $cookie;
+                }
+            }
+
             if( in_array( $response->getHttpCode(), array( 301, 302 ) ) )
             {
                 if( array_key_exists( "Location", $response->getHeaders() ) )
                 {
+                    $request->setMethod( "GET" );
+                    $request->resetContent();
                     $request->setUrl( $response->getHeaders()["Location"] );
                     $request->setHeader( "Referer", $response->getUrl()->toString() );
                     $response = null;
@@ -124,21 +140,6 @@ class HttpClient
         {
             // Save the URL in the history
             array_unshift( $this->history, $request->getUrl() );
-
-            // Save the cookies
-            if( array_key_exists( "Set-Cookie", $response->getHeaders() ) )
-            {
-                $setCookies = $response->getHeaders()["Set-Cookie"];
-
-                if( !is_array( $setCookies ) )
-                    $setCookies = array( $setCookies );
-                
-                foreach( $setCookies as $setCookie )
-                {
-                    $cookie = HttpCookie::parse( $setCookie );
-                    $this->cookies[$cookie->getName()] = $cookie;
-                }
-            }
         }
 
         return $response;

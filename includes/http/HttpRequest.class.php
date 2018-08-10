@@ -24,6 +24,11 @@ class HttpRequest
         );
     }
 
+    public function setMethod( string $method )
+    {
+        $this->method = $method;
+    }
+
     public function getMethod()
     {
         return strtoupper( $this->method );
@@ -44,9 +49,14 @@ class HttpRequest
         $this->headers[$key] = $value;
     }
 
-    public function setContent( $content )
+    public function setContent( string $content )
     {
         $this->content = $content;
+    }
+
+    public function resetContent()
+    {
+        $this->content = null;
     }
 
     public function toString()
