@@ -63,6 +63,9 @@ $steps = array(
         "data" => null,
         "process" => function( $root, $response, $httpClient )
         {
+            global $configuration;
+            $success = true;
+
             $exportData = array(
                 "data_formats_selected" => "csv",
                 "data_formats_options_cmi_download" => 0,
@@ -99,9 +102,103 @@ $steps = array(
                 $exportUrl = $exportUrl->toString();
             }
 
-            echo $exportUrl."\n";
+            if( !is_null( $exportUrl ) && strlen( $exportUrl ) )
+            {
+                $accountTable = $root->find( "table#account-table" );
 
-            return true;
+                if( !is_null( $accountTable ) )
+                {
+                    $trs = $accountTable->findAll( "tr" );
+                    $i = 0;
+
+                    foreach( $trs as $tr )
+                    {
+                        $label = $tr->find( "label" );
+                        
+                        if( !is_null( $label ) )
+                        {
+                            $importAccount = true;
+
+                            if( !is_null( $configuration["accountExclusion"] ) )
+                            {
+                                if( preg_match( $configuration["accountExclusion"], $label->getText() ) )
+                                    $importAccount = false;
+                            }
+
+                            if( $importAccount )
+                            {
+                                info( "Gathering transactions from: ".$label->getText() );
+
+                                $data = $exportData;
+                                $data["data_accounts_selection"] = "";
+
+                                for( $j = 0 ; $j < count( $trs ) ; ++$j )
+                                {
+                                    $name = ( $j == 0 ) ? "data_accounts_account_ischecked" : "data_accounts_account_".($j + 1)."__ischecked";
+                                    
+                                    if( $j == $i )
+                                    {
+                                        $data["Bool:".$name] = "true";
+                                        $data["CB:".$name] = "on";
+                                        $data["data_accounts_selection"] .= "1";
+                                    }
+                                    else
+                                    {
+                                        $data["Bool:".$name] = "false";
+                                        $data["data_accounts_selection"] .= "0";
+                                    }
+                                }
+                                
+                                $httpClient->pushHistory();
+                                $postResponse = $httpClient->post( $exportUrl, $data );
+                                $httpClient->popHistory();
+
+                                if( $postResponse->getHttpCode() == 200 )
+                                {
+                                    if( is_callable( $configuration["import"] ) )
+                                    {
+                                        // Cleaning carriage return sequence and delete header line
+                                        $contentLines = preg_split( "/\r?\n/", $postResponse->getContent() );
+                                        $contentLines = array_filter( $contentLines, function( $index ) { return $index > 0; }, ARRAY_FILTER_USE_KEY );
+                                        $content = implode( "\n", $contentLines );
+
+                                        if( !$configuration["import"]( $label->getText(), $content ) )
+                                        {
+                                            error( "Import failed." );
+                                            $status = false;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        error( "No import function defined." );
+                                        $status = false;
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    error( "Unable to export data account." );
+                                    $status = false;
+                                }
+                            }
+                        }
+
+                        ++$i;
+                    }
+                }
+                else
+                {
+                    error( "Unable to find table#account-table: structure has changed?" );
+                    $success = false;
+                }
+            }
+            else
+            {
+                error( "Unable to find form URL." );
+                $success = false;
+            }
+
+            return $success;
         }
     ),
     "logout" => array(

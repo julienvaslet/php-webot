@@ -3,6 +3,7 @@
 namespace html;
 
 require_once( dirname( __FILE__ )."/HtmlElement.class.php" );
+require_once( dirname( __FILE__ )."/HtmlText.class.php" );
 
 class HtmlTag extends HtmlElement
 {
@@ -64,6 +65,42 @@ class HtmlTag extends HtmlElement
         $this->attributes[$attribute] = $value;
     }
 
+    public function getRawContent( int $indentation = 2 )
+    {
+        $content = "";
+
+        foreach( $this->children as $child )
+        {
+            $childContent = $child->toString();
+            $childContentLines = explode( "\n", $childContent );
+            
+            foreach( $childContentLines as &$line )
+                $line = str_repeat( " ", $indentation ).$line;
+            
+            $content .= implode( "\n", $childContentLines )."\n";
+        }
+
+        return $content;
+    }
+
+    public function getText()
+    {
+        $texts = array();
+
+        foreach( $this->children as $child )
+        {
+            if( $child instanceof HtmlText )
+                array_push( $texts, $child->toString() );
+            
+            else if( $child instanceof HtmlTag )
+                array_push( $texts, $child->getText() );
+        }
+
+        $texts = array_filter( $texts, function( $value ){ return strlen($value) > 0; } );
+
+        return implode( " ", $texts );
+    }
+
     public function toString()
     {
         $indentation = 2;
@@ -85,20 +122,7 @@ class HtmlTag extends HtmlElement
             $content .= ">";
         
         if( count( $this->children ) > 0 )
-        {
-            $content .= "\n";
-
-            foreach( $this->children as $child )
-            {
-                $childContent = $child->toString();
-                $childContentLines = explode( "\n", $childContent );
-                
-                foreach( $childContentLines as &$line )
-                    $line = str_repeat( " ", $indentation ).$line;
-                
-                $content .= implode( "\n", $childContentLines )."\n";
-            }
-        }
+            $content .= "\n".$this->getRawContent( $indentation );
 
         if( !$closeInlineTags || count( $this->children ) > 0 )
             $content .= "</{$this->name}>";

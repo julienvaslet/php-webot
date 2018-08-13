@@ -19,7 +19,7 @@ class HttpRequest
         $this->content = null;
         $this->headers = array(
             "Accept-Encoding" => "deflate",
-            "Accept-Charset" => "utf-8",
+            "Accept-Charset" => "utf-8, iso-8859-1",
             "Connection" => "Close"
         );
     }
@@ -177,6 +177,12 @@ class HttpRequest
             }
 
             fclose( $socket );
+
+            // Charset conversion
+            $encoding = mb_detect_encoding( $content, mb_detect_order(), true );
+
+            if( $encoding !== false )
+                $content = mb_convert_encoding( $content, "utf-8", $encoding );
         }
         else
             throw new \Exception( "Unable to open socket: ({$errno}) {$errstr}" );
