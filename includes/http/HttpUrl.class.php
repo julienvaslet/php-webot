@@ -4,6 +4,11 @@ namespace http;
 
 class HttpUrl
 {
+    protected static $defaultPorts = array(
+        "http" => 80,
+        "https" => 443
+    );
+
     protected $protocol;
     protected $server;
     protected $port;
@@ -72,14 +77,21 @@ class HttpUrl
 
         if( is_null( $port ) )
         {
-            if( $this->getProtocol() == "http" )
-                $port = 80;
-
-            else if( $this->getProtocol() == "https" )
-                $port = 443;
+            if( array_key_exists( $this->getProtocol(), HttpUrl::$defaultPorts ) )
+                $port = HttpUrl::$defaultPorts[$this->getProtocol()];
         }
 
         return $port;
+    }
+
+    public function isDefaultProtocolPort()
+    {
+        $defaultPort = false;
+
+        if( array_key_exists( $this->getProtocol(), HttpUrl::$defaultPorts ) )
+            $defaultPort = $this->getPort() == HttpUrl::$defaultPorts[$this->getProtocol()];
+
+        return $defaultPort;
     }
 
     public function addQuery( $key, $value )
@@ -116,7 +128,14 @@ class HttpUrl
 
     public function toString()
     {
-        return "{$this->getProtocol()}://{$this->getServer()}:{$this->getPort()}{$this->getRequestLocation()}";
+        $url = $this->getProtocol()."://".$this->getServer();
+
+        if( !$this->isDefaultProtocolPort() )
+            $url .= ":".$this->getPort();
+
+        $url .= $this->getRequestLocation();
+
+        return $url;
     }
 
     public static function parse( $url, HttpUrl $relative = null )
